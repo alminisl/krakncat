@@ -13,6 +13,16 @@ import (
 
 // generateSSHKey generates an SSH key and optionally updates SSH config
 func generateSSHKey(name, email, keyPath string) error {
+	// Ensure the SSH directory exists
+	if err := ensureSSHDirectory(); err != nil {
+		return err
+	}
+
+	// Ensure the key directory exists
+	if err := ensureSSHKeyDirectory(keyPath); err != nil {
+		return err
+	}
+
 	// Check if key already exists
 	if _, err := os.Stat(keyPath); err == nil {
 		return fmt.Errorf("❌ SSH key already exists at %s", keyPath)
@@ -58,8 +68,14 @@ Host github.com-%s
 	resp = strings.ToLower(strings.TrimSpace(resp))
 
 	if resp == "y" || resp == "" {
+		// Ensure SSH directory exists before writing config
+		if err := ensureSSHDirectory(); err != nil {
+			return err
+		}
+		
 		homeDir, _ := os.UserHomeDir()
 		configPath := filepath.Join(homeDir, ".ssh", "config")
+
 		f, err := os.OpenFile(configPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			return fmt.Errorf("failed to write to SSH config: %w", err)
@@ -78,6 +94,30 @@ Host github.com-%s
 	fmt.Println("\n📋 Add this public key to GitHub: https://github.com/settings/ssh/new")
 	fmt.Printf("🌐 Host alias for SSH: github.com-%s\n", name)
 
+	return nil
+}
+
+// ensureSSHDirectory creates the .ssh directory if it doesn't exist with proper permissions
+func ensureSSHDirectory() error {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("could not get user home directory: %w", err)
+	}
+
+	sshDir := filepath.Join(homeDir, ".ssh")
+	if err := os.MkdirAll(sshDir, 0700); err != nil {
+		return fmt.Errorf("failed to create SSH directory: %w", err)
+	}
+
+	return nil
+}
+
+// ensureSSHKeyDirectory creates the directory for an SSH key path if it doesn't exist
+func ensureSSHKeyDirectory(keyPath string) error {
+	keyDir := filepath.Dir(keyPath)
+	if err := os.MkdirAll(keyDir, 0700); err != nil {
+		return fmt.Errorf("failed to create directory for SSH key %s: %w", keyDir, err)
+	}
 	return nil
 }
 

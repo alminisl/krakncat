@@ -264,15 +264,15 @@ git clone git@github.com-personal:username/repo.git
 
 | Command         | Description                                                               |
 | --------------- | ------------------------------------------------------------------------- |
-| `generate-key`  | Generate and configure a new SSH key for a GitHub account                 |
-| `add`           | Add a new GitHub account with interactive prompts                         |
-| `list` / `ls`   | List all configured accounts and current git configuration                |
+| `generate-key`  | Generate and configure a new SSH key for any Git provider                |
+| `add`           | Add a new Git account (GitHub, GitLab, Gitea, or custom) with interactive prompts |
+| `list` / `ls`   | List all configured accounts grouped by provider and current git configuration |
 | `use`           | Switch git configuration to use a specific account (globally or per-repo) |
 | `config`        | Setup automatic git config for a directory using conditional includes     |
 | `global`        | Set global git configuration to use a specific account                    |
 | `show-includes` | Show current conditional includes in global git config                    |
-| `migrate`       | Migrate existing git configuration to krakncat                            |
-| `remove`        | Remove a GitHub account configuration                                     |
+| `migrate`       | Migrate existing git configuration to krakncat (supports all providers)   |
+| `remove`        | Remove a Git account configuration                                         |
 | `help`          | Show help for any command                                                 |
 
 #### Key Flags
@@ -421,10 +421,18 @@ krakncat/
 
 🚧 The following features are planned for future releases:
 
-- `clone` - Clone repositories using the correct SSH key automatically
-- `edit` - Edit account details
-- `backup` - Backup/restore account configurations
+### Multi-Provider Support (v2.0) 🌐
+- ✅ **GitHub, GitLab, Gitea support** - Add accounts from multiple Git hosting providers
+- ✅ **Custom Git hosts** - Support for self-hosted Git servers
+- ✅ **Provider-specific configurations** - Automatic SSH config generation per provider
+- ✅ **Unified account management** - Manage all providers through the same interface
+
+### Enhanced Commands
+- `clone` - Clone repositories using the correct SSH key automatically (provider-aware)
+- `edit` - Edit account details including switching providers
+- `backup` - Backup/restore account configurations with provider info
 - `clean` - Remove orphaned conditional includes from .gitconfig
+- `providers` - List and manage supported Git hosting providers
 
 ## Contributing
 
@@ -466,6 +474,21 @@ This project is open source and available under the [MIT License](LICENSE).
 - Ensure proper permissions on `~/.ssh/` directory: `chmod 700 ~/.ssh`
 - SSH key files should have `600` permissions: `chmod 600 ~/.ssh/id_*`
 
+**Error: "No such file or directory" when generating SSH keys**
+
+- This usually means the `.ssh` directory doesn't exist.
+- krakncat automatically creates it, but if you see this error, manually create it:
+  ```bash
+  mkdir -p ~/.ssh
+  chmod 700 ~/.ssh
+  ```
+
+**SSH key generation fails with "exit status 1"**
+
+- Check if the SSH key path directory exists and is writable
+- Ensure you have sufficient disk space
+- Try generating the key manually first: `ssh-keygen -t ed25519 -f ~/.ssh/test_key`
+
 **Git config not working**
 
 - Check if Git is installed: `git --version`
@@ -477,3 +500,129 @@ This project is open source and available under the [MIT License](LICENSE).
 - Run `krakn <command> --help` for specific command help
 - Check existing SSH configs: `cat ~/.ssh/config`
 - View current Git config: `git config --global --list`
+
+### Multi-Provider Support 🌐
+
+krakncat supports multiple Git hosting providers:
+
+- **GitHub** (github.com)
+- **GitLab** (gitlab.com) 
+- **Gitea** (gitea.com or self-hosted)
+- **Custom Git hosts** (any Git server)
+
+#### Adding accounts for different providers
+
+```bash
+# Add a GitHub account
+./krakn add
+# 🌐 Select Git hosting provider:
+#    1. GitHub (github.com)
+#    2. GitLab (gitlab.com)
+#    3. Gitea (gitea.com)
+#    4. Custom/Self-hosted (e.g., git.company.com, code.myorg.io)
+# Enter choice (1-4): 1
+
+# Add a GitLab account  
+./krakn add
+# Select option 2 for GitLab
+
+# Add a self-hosted Gitea account
+./krakn add  
+# Select option 4 for custom
+# Enter hostname: git.company.com
+# Enter display name: Company Gitea
+# SSH user [git]: git
+# SSH port [22]: 2222
+# SSH key management URL: https://git.company.com/user/settings/keys
+```
+
+#### Multi-Provider SSH Configuration
+
+krakncat automatically generates provider-specific SSH configurations:
+
+```ssh
+# GitHub accounts
+Host github.com-personal
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_gh_personal
+
+Host github.com-work
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_gh_work
+
+# GitLab accounts  
+Host gitlab.com-freelance
+  HostName gitlab.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_gl_freelance
+
+# Self-hosted Gitea
+Host git.company.com-work
+  HostName git.company.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_company_work
+
+# Custom port example  
+Host code.internal.com-dev
+  HostName code.internal.com
+  User git
+  Port 2222
+  IdentityFile ~/.ssh/id_ed25519_internal_dev
+```
+
+#### Cloning from different providers
+
+```bash
+# GitHub
+git clone git@github.com-personal:username/repo.git
+
+# GitLab
+git clone git@gitlab.com-freelance:username/project.git
+
+# Self-hosted Gitea
+git clone git@git.company.com-work:team/internal-tool.git
+```
+
+#### Provider-specific features
+
+- **Automatic key naming**: Keys are prefixed with provider (`gh_`, `gl_`, `gitea_`, `custom_`)
+- **Provider-specific URLs**: Direct links to SSH key management pages
+- **Custom hostnames**: Support for any self-hosted Git server
+- **Unified management**: All providers managed through the same commands
+
+#### Advanced Custom Provider Features
+
+**Smart hostname handling:**
+- Automatic key suffix generation (`git.company.com` → `company`)
+- Support for any domain, subdomain, or IP address
+- Custom SSH port configuration
+- Flexible SSH user settings
+
+**Common custom setups supported:**
+- Self-hosted GitLab: `gitlab.company.com`
+- Self-hosted Gitea: `git.myorg.io` 
+- Bitbucket Server: `bitbucket.enterprise.com:7999`
+- Azure DevOps Server: `tfs.company.com`
+- Custom Git servers: `code.internal.net`
+
+**Example custom provider configuration:**
+```bash
+./krakn add
+# 🔧 Custom Git Provider Setup
+# 🌐 Enter hostname: git.company.com
+# 📝 Enter display name [git.company.com]: Company Git
+# 👤 SSH user [git]: git  
+# 🔌 SSH port [22]: 2222
+# 🔗 SSH key management URL: https://git.company.com/settings/ssh
+# 🔑 SSH key suffix will be: company
+# 
+# ✅ Custom provider configuration:
+#    Name: Company Git
+#    Hostname: git.company.com
+#    SSH User: git
+#    SSH Port: 2222
+#    Web URL: https://git.company.com/settings/ssh
+#    Key Suffix: company
+```
