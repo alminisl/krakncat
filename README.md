@@ -18,14 +18,63 @@
 
 ## Installation
 
+### Prerequisites
+
+Ensure you have Go 1.21+ installed on your system.
+
+**Arch Linux:**
+```bash
+sudo pacman -S go
+```
+
+**Other distributions:**
+- Follow the [official Go installation guide](https://golang.org/doc/install)
+
 ### Build from source
 
 ```bash
 git clone https://github.com/alminisl/krakncat.git
 cd krakncat
+make dev              # Download deps, tidy modules, and build
+```
+
+### Alternative build methods
+
+**Using Go directly:**
+```bash
 go mod tidy
 go build -o krakn .
 ```
+
+**Using make:**
+```bash
+make build           # Just build
+make install         # Build and install to /usr/local/bin
+make test           # Run tests
+make clean          # Clean build artifacts
+```
+
+### Installation to system
+
+```bash
+# After building
+sudo cp krakn /usr/local/bin/
+# or use make
+make install
+```
+
+### Quick Install for Arch Linux 🏃‍♂️
+
+```bash
+git clone https://github.com/alminisl/krakncat.git
+cd krakncat
+./install-arch.sh    # Automated installation script
+```
+
+This script will:
+- Install Go and other dependencies via pacman
+- Build the application
+- Optionally install it system-wide
 
 ### First Run - Smart Migration 🆕
 
@@ -383,3 +432,41 @@ This project is open source and available under the [MIT License](LICENSE).
 ## Why "krakncat"?
 
 The name is a playful combination of "kraken" (the legendary sea monster) and "cat" (like GitHub's mascot), representing the tool's ability to wrangle multiple GitHub accounts like a mythical sea creature managing different tentacles! 🐙
+
+## Troubleshooting
+
+### Build Issues
+
+**Error: "found packages cmd and main"**
+- This occurs when there are duplicate files. Ensure there's no `krakn.go` in the root directory.
+- Solution: Remove any duplicate files and rebuild.
+
+**Error: "go: command not found"**
+- Go is not installed on your system.
+- **Arch Linux**: `sudo pacman -S go`
+- **Other distros**: Follow the [official Go installation guide](https://golang.org/doc/install)
+
+**Error: Module download issues**
+- Check your internet connection and Go proxy settings.
+- Try: `go env -w GOPROXY=direct`
+
+### Runtime Issues
+
+**Error: "ssh-keygen: command not found"**
+- OpenSSH is not installed.
+- **Arch Linux**: `sudo pacman -S openssh`
+
+**Permission denied accessing SSH files**
+- Ensure proper permissions on `~/.ssh/` directory: `chmod 700 ~/.ssh`
+- SSH key files should have `600` permissions: `chmod 600 ~/.ssh/id_*`
+
+**Git config not working**
+- Check if Git is installed: `git --version`
+- Verify config with: `git config --list`
+
+### Getting Help
+
+- Run `krakn --help` for command overview
+- Run `krakn <command> --help` for specific command help
+- Check existing SSH configs: `cat ~/.ssh/config`
+- View current Git config: `git config --global --list`
